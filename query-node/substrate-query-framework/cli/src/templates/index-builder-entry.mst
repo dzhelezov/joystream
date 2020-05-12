@@ -1,0 +1,41 @@
+import "reflect-metadata";
+import * as dotenv from 'dotenv';
+import { createConnection } from 'typeorm';
+import { {{typeRegistrator}} } from '{{{packageName}}}';
+import { QueryNodeManager, QueryEvent, DB } from "index-builder/lib";
+
+// Mappings use!
+export { DB }
+
+function getProcessingPack() {
+  const handlers = require('../../mappings');
+
+  let processingPack: { [key: string]: any } = {};
+
+  Object.keys(handlers).map((handler: string) => {
+    let eventName = handler.replace('handle', '');
+    processingPack[eventName] = handlers[handler];
+  });
+  return processingPack;
+}
+
+async function main() {
+  // Load from .env
+  dotenv.config({ path: '../../.env' });
+
+  const providerUri = process.env.WS_PROVIDER_ENDPOINT_URI;
+
+  if (!providerUri) {
+    console.error(
+      'WS_PROVIDER_ENDPOINT_URI environment variable is not set! Make sure you set it in your .env file or system wide.'
+    );
+    process.exit(1);
+  }
+
+	const conn = await createConnection();
+
+  const node = new QueryNodeManager(process);
+  node.start(providerUri, getProcessingPack(), {{typeRegistrator}});
+}
+
+main();
