@@ -1,3 +1,1 @@
-import { handleMemberRegistered } from "./members";
-
-export { handleMemberRegistered };
+export { handleMemberRegistered, handleMemberUpdatedAboutText } from './members';

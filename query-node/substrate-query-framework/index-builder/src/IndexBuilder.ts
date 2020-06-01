@@ -1,10 +1,17 @@
 // @ts-check
 
-import { getRepository } from 'typeorm';
-import { QueryBlockProducer, QueryEventProcessingPack, QueryEventBlock, ISubstrateQueryService } from '.';
-import { DB, SavedEntityEvent } from './db';
+import { getRepository, getConnection } from 'typeorm';
 
-const debug = require('debug')('index');
+import {
+  QueryBlockProducer,
+  QueryEventProcessingPack,
+  QueryEventBlock,
+  ISubstrateQueryService,
+  SavedEntityEvent,
+  makeDatabaseManager,
+} from '.';
+
+const debug = require('debug')('index-builder:indexer');
 
 export default class IndexBuilder {
   private _producer: QueryBlockProducer;
@@ -49,18 +56,39 @@ export default class IndexBuilder {
   async stop() {}
 
   _onQueryEventBlock(query_event_block: QueryEventBlock): void {
-    console.log(`Yay, block producer at height: #${query_event_block.block_number}`);
+    debug(`Yay, block producer at height: #${query_event_block.block_number}`);
 
-    query_event_block.query_events.forEach((query_event, index) => {
+    query_event_block.query_events.forEach(async (query_event, index) => {
       if (!this._processing_pack[query_event.event_method]) {
-        console.log(`Unrecognized: ` + query_event.event_name);
+        debug(`Unrecognized: ` + query_event.event_name);
 
         query_event.log(0, debug);
       } else {
-        console.log(`Recognized: ` + query_event.event_name);
+        debug(`Recognized: ` + query_event.event_name);
 
-        // Call event handler to store data on database
-        this._processing_pack[query_event.event_method](new DB(query_event));
+        const queryRunner = getConnection().createQueryRunner();
+        try {
+          // establish real database connection
+          await queryRunner.connect();
+          await queryRunner.startTransaction();
+
+          // Call event handler
+          await this._processing_pack[query_event.event_method](makeDatabaseManager(queryRunner.manager), query_event);
+
+          // Update last processed event
+          await SavedEntityEvent.update(query_event, queryRunner.manager);
+
+          await queryRunner.commitTransaction();
+        } catch (error) {
+          debug(`There are errors. Rolling back the transaction. Reason: ${error.message}`);
+
+          // Since we have errors lets rollback changes we made
+          await queryRunner.rollbackTransaction();
+          throw new Error(error);
+        } finally {
+          // Query runner needs to be released manually.
+          await queryRunner.release();
+        }
       }
     });
   }

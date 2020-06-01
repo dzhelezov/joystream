@@ -28,5 +28,7 @@ yarn*
 **/discovery_node/**/yarn.lock
 
 # Warthog codegen
-generated/
->>>>>>> 95a0f29ebb4d3a7628db675d4d0c56c5727d305b
+**/generated/
+
+# eslint cache
+**/.eslintcache

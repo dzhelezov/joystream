@@ -1,12 +1,13 @@
 import ISubstrateQueryService, { makeQueryService } from './ISubstrateQueryService';
 import QueryBlockProducer from './QueryBlockProducer';
 import QueryEventProcessingPack from './QueryEventProcessingPack';
-import QueryEvent from './QueryEvent';
+import QueryEvent, { SubstrateEvent } from './QueryEvent';
 import QueryEventBlock from './QueryEventBlock';
 import IndexBuilder from './IndexBuilder';
 import QueryNode, { QueryNodeState } from './QueryNode';
 import QueryNodeManager from './QueryNodeManager';
-import { DB, SavedEntityEvent } from './db';
+import { DatabaseManager, SavedEntityEvent, makeDatabaseManager } from './db';
+import BootstrapPack, { BootstrapFunc } from './bootstrap/BootstrapPack';
 
 export {
   ISubstrateQueryService,
@@ -14,11 +15,15 @@ export {
   QueryBlockProducer,
   QueryEventProcessingPack,
   QueryEvent,
+  SubstrateEvent,
   QueryEventBlock,
   IndexBuilder,
   QueryNode,
   QueryNodeState,
   QueryNodeManager,
-  DB,
+  makeDatabaseManager,
+  DatabaseManager,
   SavedEntityEvent,
+  BootstrapPack,
+  BootstrapFunc,
 };
