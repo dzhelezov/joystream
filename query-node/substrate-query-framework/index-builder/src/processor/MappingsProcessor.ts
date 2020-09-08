@@ -1,7 +1,7 @@
 import { QueryEventProcessingPack, makeDatabaseManager, SubstrateEvent } from '..';
 import { Codec } from '@polkadot/types/types';
 import Debug from 'debug';
-import { getRepository, QueryRunner, In, MoreThan } from 'typeorm';
+import { getRepository, QueryRunner, In, MoreThan, LessThanOrEqual } from 'typeorm';
 import { doInTransaction } from '../db/helper';
 import { SubstrateEventEntity } from '../entities';
 import { numberEnv } from '../utils/env-flags';
@@ -95,7 +95,11 @@ export default class MappingsProcessor {
           {
             id: MoreThan(this._lastEventIndex),
             name: In(this._events),
-          }],
+          }, 
+          {
+            block: LessThanOrEqual(this._indexerHead)
+          }
+        ],
         order: {
           id: 'ASC'
         },
